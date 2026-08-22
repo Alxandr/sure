@@ -183,7 +183,7 @@ version::bump-point() {
     return 1
   fi
 
-  printf '%s.%s.%s\n' "${major}" "$((minor + 1))" "0"
+  printf '%s.%s.%s\n' "${major}" "$((10#${minor} + 1))" "0"
 }
 
 version::bump-fix() {
@@ -199,7 +199,7 @@ version::bump-fix() {
     return 1
   fi
 
-  printf '%s.%s.%s\n' "${major}" "${minor}" "$((patch + 1))"
+  printf '%s.%s.%s\n' "${major}" "${minor}" "$((10#${patch} + 1))"
 }
 
 version::bump-prerelease() {
@@ -408,8 +408,8 @@ step::update-version() {
 
   log::debug "updating version to: ${version}"
   printf '%s\n' "${version}" > .sure-version
-  sed -i .bak -E "s/^version:.*/version: ${version}/" charts/sure/Chart.yaml
-  sed -i .bak -E "s/^appVersion:.*/appVersion: \"${version}\"/" charts/sure/Chart.yaml
+  sed -i.bak -E "s/^version:.*/version: ${version}/" charts/sure/Chart.yaml
+  sed -i.bak -E "s/^appVersion:.*/appVersion: \"${version}\"/" charts/sure/Chart.yaml
   rm -f charts/sure/Chart.yaml.bak
 
   file_version="$(< .sure-version)"

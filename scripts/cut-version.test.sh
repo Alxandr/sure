@@ -53,11 +53,25 @@ test::version::bump-point::increments-minor-and-resets-patch() {
   assert_equals "1.3.0" "$result"
 }
 
+test::version::bump-point::treats-leading-zero-minor-as-decimal() {
+  local result
+
+  result=$(version::bump-point "1.08.3")
+  assert_equals "1.9.0" "$result"
+}
+
 test::version::bump-fix::increments-patch() {
   local result
 
   result=$(version::bump-fix "1.2.3")
   assert_equals "1.2.4" "$result"
+}
+
+test::version::bump-fix::treats-leading-zero-patch-as-decimal() {
+  local result
+
+  result=$(version::bump-fix "1.2.09")
+  assert_equals "1.2.10" "$result"
 }
 
 test::version::bump-prerelease::increments-alpha-number() {
@@ -170,4 +184,28 @@ test::version::next-rc::from-rc-increments-rc() {
 
   result=$(version::next-rc "1.2.3-rc.4")
   assert_equals "1.2.3-rc.5" "$result"
+}
+
+test::step::update-version::updates-version-files-and-removes-backup() {
+  CUT_VERSION_TEST_TMPDIR="$(mktemp -d)"
+  trap 'rm -rf -- "${CUT_VERSION_TEST_TMPDIR}"' EXIT
+
+  mkdir -p "${CUT_VERSION_TEST_TMPDIR}/charts/sure"
+  printf '%s\n' "0.0.0" > "${CUT_VERSION_TEST_TMPDIR}/.sure-version"
+  printf '%s\n' \
+    "apiVersion: v2" \
+    "name: sure" \
+    "version: 0.0.0" \
+    'appVersion: "0.0.0"' \
+    > "${CUT_VERSION_TEST_TMPDIR}/charts/sure/Chart.yaml"
+
+  cd "${CUT_VERSION_TEST_TMPDIR}"
+  git() { return 0; }
+
+  step::update-version "1.2.3"
+
+  assert_equals "1.2.3" "$(< .sure-version)"
+  assert_equals "version: 1.2.3" "$(sed -n '/^version:/p' charts/sure/Chart.yaml)"
+  assert_equals 'appVersion: "1.2.3"' "$(sed -n '/^appVersion:/p' charts/sure/Chart.yaml)"
+  assert "[[ ! -e charts/sure/Chart.yaml.bak ]]"
 }
